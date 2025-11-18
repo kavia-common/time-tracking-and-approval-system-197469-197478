@@ -7,7 +7,7 @@ export default function NavBar({ onToggleTheme, theme }) {
   /**
    * Top navigation bar with app title, basic actions, and auth controls.
    */
-  const { user, signOut } = useAuth();
+  const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -29,7 +29,7 @@ export default function NavBar({ onToggleTheme, theme }) {
         {user ? (
           <>
             <span style={{ alignSelf: 'center', color: 'var(--text-secondary)', fontSize: 14 }}>
-              {user.email}
+              {user.email}{role ? ` · ${role}` : ''}
             </span>
             <button className="theme-toggle" onClick={handleLogout}>Logout</button>
           </>

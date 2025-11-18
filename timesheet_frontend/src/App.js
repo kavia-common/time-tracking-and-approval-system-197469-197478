@@ -11,14 +11,15 @@ import Login from './pages/Login';
 import WeeklyGrid from './pages/WeeklyGrid';
 import SubmitWeek from './pages/SubmitWeek';
 import Clock from './pages/Clock';
-
-// Simple placeholder components for route targets
-const Placeholder = ({ title }) => (
-  <div style={{ padding: 16 }}>
-    <h2>{title}</h2>
-    <p>This page is under construction.</p>
-  </div>
-);
+import EmployeeDashboard from './pages/EmployeeDashboard';
+import ManagerApprovals from './pages/ManagerApprovals';
+import HRAttendance from './pages/HRAttendance';
+import Exports from './pages/Reporting/Exports';
+import UsersRoles from './pages/Admin/UsersRoles';
+import ProjectsTasks from './pages/Admin/ProjectsTasks';
+import HolidaysAbsences from './pages/Admin/HolidaysAbsences';
+import Settings from './pages/Admin/Settings';
+import AuditLogs from './pages/Admin/AuditLogs';
 
 // PUBLIC_INTERFACE
 function App() {
@@ -56,7 +57,7 @@ function App() {
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
-                    <Placeholder title="Dashboard" />
+                    <EmployeeDashboard />
                   </ProtectedRoute>
                 }
               />
@@ -88,33 +89,70 @@ function App() {
                 path="/approvals"
                 element={
                   <ProtectedRoute requiredRole="manager">
-                    <Placeholder title="Approvals" />
+                    <ManagerApprovals />
                   </ProtectedRoute>
                 }
               />
               <Route
-                path="/reporting"
+                path="/reporting/exports"
                 element={
                   <ProtectedRoute requiredRole="hr">
-                    <Placeholder title="Reporting" />
+                    <Exports />
+                  </ProtectedRoute>
+                }
+              />
+              {/* Admin nested routes */}
+              <Route
+                path="/admin/users-roles"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <UsersRoles />
                   </ProtectedRoute>
                 }
               />
               <Route
-                path="/admin"
+                path="/admin/projects-tasks"
                 element={
                   <ProtectedRoute requiredRole="admin">
-                    <Placeholder title="Admin" />
+                    <ProjectsTasks />
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/admin/holidays-absences"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <HolidaysAbsences />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/settings"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/audit-logs"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AuditLogs />
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Experimental example */}
               {flags.experimentsEnabled && flags.flags.experimentalView && (
                 <Route
                   path="/experimental"
                   element={
                     <ProtectedRoute>
-                      <Placeholder title="Experimental" />
+                      <div style={{ padding: 16 }}>
+                        <h2>Experimental</h2>
+                        <p>This page is under construction.</p>
+                      </div>
                     </ProtectedRoute>
                   }
                 />

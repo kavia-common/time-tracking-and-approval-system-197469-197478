@@ -2,10 +2,19 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../lib/authContext';
 
+/**
+ * Small helper to detect allowed roles.
+ */
+function hasAnyRole(role, allowed) {
+  if (!allowed || allowed.length === 0) return true;
+  return allowed.includes(role);
+}
+
 // PUBLIC_INTERFACE
 export default function SideNav({ flags }) {
   /**
    * Side navigation with primary and role-gated links.
+   * Shows Admin section with nested links only for admins.
    */
   const { user, role } = useAuth();
   if (!user) return null;
@@ -16,9 +25,23 @@ export default function SideNav({ flags }) {
       <NavLink to="/timesheet">Timesheet</NavLink>
       <NavLink to="/timesheet/submit">Submit Week</NavLink>
       <NavLink to="/clock">Clock</NavLink>
-      {role === 'manager' && <NavLink to="/approvals">Approvals</NavLink>}
-      {(role === 'hr' || role === 'admin') && <NavLink to="/reporting">Reporting</NavLink>}
-      {role === 'admin' && <NavLink to="/admin">Admin</NavLink>}
+
+      {hasAnyRole(role, ['manager']) && <NavLink to="/approvals">Approvals</NavLink>}
+      {hasAnyRole(role, ['hr', 'admin']) && <NavLink to="/reporting/exports">Reporting / Exports</NavLink>}
+
+      {hasAnyRole(role, ['admin']) && (
+        <>
+          <div style={{ marginTop: 10, marginBottom: 4, fontSize: 12, color: 'var(--text-secondary)' }}>
+            Admin
+          </div>
+          <NavLink to="/admin/users-roles">Users & Roles</NavLink>
+          <NavLink to="/admin/projects-tasks">Projects & Tasks</NavLink>
+          <NavLink to="/admin/holidays-absences">Holidays & Absences</NavLink>
+          <NavLink to="/admin/settings">Settings</NavLink>
+          <NavLink to="/admin/audit-logs">Audit Logs</NavLink>
+        </>
+      )}
+
       {flags?.experimentsEnabled && flags?.flags?.experimentalView && (
         <NavLink to="/experimental">Experimental</NavLink>
       )}
