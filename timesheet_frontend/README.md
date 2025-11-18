@@ -57,6 +57,9 @@ Notes:
   - Toggle on in production with REACT_APP_FEATURE_FLAGS=showSupabaseBanner
   - Dismiss persists via localStorage ('hideSupabaseBanner')
   - Values are masked; full secrets are never logged or displayed.
+- Login Diagnostics (this page): When NODE_ENV !== 'production' or when the 'diagnostics' feature flag is enabled in REACT_APP_FEATURE_FLAGS,
+  the Login page shows a masked runtime detection panel for REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY, including inline troubleshooting tips.
+  Secrets are never logged; anon key is masked to show only the last 4 characters.
 
 ## App Structure and Routes
 
