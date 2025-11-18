@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import dayjs from 'dayjs';
-import { apiFetch } from '../../lib/apiClient';
 import { toCSV, downloadCSV } from '../../utils/csv';
+import { getSupabase } from '../../lib/supabaseClient';
 
 // PUBLIC_INTERFACE
 export default function Exports() {
@@ -12,19 +12,56 @@ export default function Exports() {
   const [period, setPeriod] = useState('week'); // week | month
   const [when, setWhen] = useState(dayjs().format('YYYY-[W]ww')); // simple token for now
   const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState('');
+  const supabase = getSupabase();
 
   const onExport = async () => {
     setExporting(true);
-    // Placeholder dataset; in future call: await apiFetch(`/reports/exports?period=${period}&when=${when}`);
-    await new Promise((r) => setTimeout(r, 250));
-    const headers = ['User', 'Date', 'Project', 'Task', 'Hours', 'Absence', 'Notes'];
-    const rows = [
-      ['alice@example.com', dayjs().format('YYYY-MM-DD'), 'chronose', 'project', 8, 'none', 'Initial implementation'],
-      ['bob@example.com', dayjs().format('YYYY-MM-DD'), 'internal', 'meetings', 6.5, 'none', 'Sprint planning'],
-    ];
-    const csv = toCSV(headers, rows);
-    downloadCSV(`export_${period}_${when}.csv`, csv);
-    setExporting(false);
+    setError('');
+    try {
+      let headers = ['User', 'Date', 'Project', 'Task', 'Hours', 'Absence', 'Notes'];
+      let rows = [];
+      if (supabase) {
+        if (period === 'week') {
+          const { data, error } = await supabase.rpc('report_export_week', { p_week_key: when });
+          if (error) throw error;
+          rows = (data || []).map((r) => [
+            r.user_email || r.user || '',
+            r.date,
+            r.project_id || '',
+            r.task_id || '',
+            Number(r.hours || 0),
+            r.absence || 'none',
+            r.notes || '',
+          ]);
+        } else {
+          // month expected format YYYY-MM
+          const { data, error } = await supabase.rpc('report_export_month', { p_month: when });
+          if (error) throw error;
+          rows = (data || []).map((r) => [
+            r.user_email || r.user || '',
+            r.date,
+            r.project_id || '',
+            r.task_id || '',
+            Number(r.hours || 0),
+            r.absence || 'none',
+            r.notes || '',
+          ]);
+        }
+      } else {
+        // Fallback local stub
+        rows = [
+          ['alice@example.com', dayjs().format('YYYY-MM-DD'), 'chronose', 'project', 8, 'none', 'Initial implementation'],
+          ['bob@example.com', dayjs().format('YYYY-MM-DD'), 'internal', 'meetings', 6.5, 'none', 'Sprint planning'],
+        ];
+      }
+      const csv = toCSV(headers, rows);
+      downloadCSV(`export_${period}_${when}.csv`, csv);
+    } catch (e) {
+      setError(String(e?.message || e));
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -59,8 +96,11 @@ export default function Exports() {
         </button>
       </section>
 
+      {error && (
+        <div style={{ marginTop: 12, color: 'var(--error)' }}>{error}</div>
+      )}
       <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text-secondary)' }}>
-        Note: The data is stubbed. Integrate filters and real datasets later.
+        Note: Uses Supabase RPCs when configured; otherwise falls back to sample data.
       </div>
     </div>
   );

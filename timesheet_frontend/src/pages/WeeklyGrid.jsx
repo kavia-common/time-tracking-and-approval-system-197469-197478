@@ -4,6 +4,7 @@ import { TASK_CATEGORIES, PROJECTS, ABSENCE_TYPES } from '../constants/catalogs'
 import { calcTotals, formatDay, getWeekDays, getWeekStart, loadDraft, saveDraft, toISODate, validateWeek } from '../utils/time';
 import { toCSV, downloadCSV } from '../utils/csv';
 import dayjs from 'dayjs';
+import { getSupabase } from '../lib/supabaseClient';
 
 // Row component for a single entry
 function EntryRow({ value, onChange, onRemove }) {
@@ -84,6 +85,7 @@ export default function WeeklyGrid() {
    */
   const { user } = useAuth();
   const userId = user?.id || 'anon';
+  const supabase = getSupabase();
 
   const [weekStart, setWeekStart] = useState(getWeekStart(new Date()).toDate());
   const days = useMemo(() => getWeekDays(weekStart), [weekStart]);
@@ -92,23 +94,147 @@ export default function WeeklyGrid() {
   const [absencesByDay, setAbsencesByDay] = useState({});
   const [issues, setIssues] = useState([]);
   const [lastSavedTs, setLastSavedTs] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  // load draft on mount and when week changes
+  // Load from Supabase for this user/week; fallback to local draft
   useEffect(() => {
-    const draft = loadDraft(weekStart, userId);
-    setEntriesByDay(draft.entriesByDay || {});
-    setAbsencesByDay(draft.absencesByDay || {});
-    setIssues([]);
-  }, [weekStart, userId]);
+    let active = true;
+    async function load() {
+      setLoading(true);
+      setError('');
+      try {
+        if (supabase && userId !== 'anon') {
+          const weekKey = dayjs(weekStart).format('YYYY-[W]ww');
+          // Pull entries
+          const { data: entries, error: e1 } = await supabase
+            .from('timesheet_entries')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('week_key', weekKey);
 
-  // autosave on changes (debounced)
+          if (e1) throw e1;
+
+          // Pull absences
+          const { data: absences, error: e2 } = await supabase
+            .from('absences')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('week_key', weekKey);
+
+          if (e2) throw e2;
+
+          // Normalize
+          const byDay = {};
+          (entries || []).forEach((row) => {
+            const iso = row.date;
+            byDay[iso] = byDay[iso] || [];
+            byDay[iso].push({
+              projectId: row.project_id || '',
+              taskId: row.task_id || '',
+              hours: Number(row.hours || 0),
+              notes: row.notes || '',
+            });
+          });
+
+          const absByDay = {};
+          (absences || []).forEach((row) => {
+            absByDay[row.date] = row.type || 'none';
+          });
+
+          if (active) {
+            // Merge with local draft as optimistic cache for any offline edits
+            const draft = loadDraft(weekStart, userId);
+            setEntriesByDay({ ...(byDay || {}), ...(draft.entriesByDay || {}) });
+            setAbsencesByDay({ ...(absByDay || {}), ...(draft.absencesByDay || {}) });
+            setIssues([]);
+          }
+        } else {
+          const draft = loadDraft(weekStart, userId);
+          if (active) {
+            setEntriesByDay(draft.entriesByDay || {});
+            setAbsencesByDay(draft.absencesByDay || {});
+            setIssues([]);
+          }
+        }
+      } catch (e) {
+        if (active) setError(String(e?.message || e));
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      active = false;
+    };
+  }, [supabase, weekStart, userId]);
+
+  // autosave to local and persist to Supabase (debounced)
   useEffect(() => {
-    const id = setTimeout(() => {
+    const id = setTimeout(async () => {
+      // Always save local draft
       saveDraft(weekStart, userId, { entriesByDay, absencesByDay, meta: { updatedAt: Date.now() } });
       setLastSavedTs(Date.now());
-    }, 500);
+
+      // Cloud sync if supabase available
+      if (supabase && userId !== 'anon') {
+        try {
+          const weekKey = dayjs(weekStart).format('YYYY-[W]ww');
+
+          // Upsert entries: clear week for user then insert current representation
+          const dates = Object.keys(entriesByDay || {});
+          // Flatten rows
+          const rows = [];
+          dates.forEach((iso) => {
+            (entriesByDay[iso] || []).forEach((r) => {
+              rows.push({
+                user_id: userId,
+                week_key: weekKey,
+                date: iso,
+                project_id: r.projectId || null,
+                task_id: r.taskId || null,
+                hours: Number(r.hours || 0),
+                notes: r.notes || null,
+              });
+            });
+          });
+
+          // Transactional-ish: delete then insert (RLS should ensure own rows only)
+          await supabase.from('timesheet_entries')
+            .delete()
+            .eq('user_id', userId)
+            .eq('week_key', weekKey);
+
+          if (rows.length > 0) {
+            const { error: insErr } = await supabase.from('timesheet_entries').insert(rows);
+            if (insErr) throw insErr;
+          }
+
+          // Sync absences
+          const absRows = Object.entries(absencesByDay || {}).map(([iso, type]) => ({
+            user_id: userId,
+            week_key: weekKey,
+            date: iso,
+            type: type || 'none',
+          }));
+
+          await supabase.from('absences')
+            .delete()
+            .eq('user_id', userId)
+            .eq('week_key', weekKey);
+
+          if (absRows.length > 0) {
+            const { error: absErr } = await supabase.from('absences').insert(absRows);
+            if (absErr) throw absErr;
+          }
+        } catch (e) {
+          // Surface non-fatal sync error
+          setError(String(e?.message || e));
+        }
+      }
+    }, 600);
     return () => clearTimeout(id);
-  }, [entriesByDay, absencesByDay, weekStart, userId]);
+  }, [entriesByDay, absencesByDay, weekStart, userId, supabase]);
 
   const { perDay, weekTotal } = useMemo(() => calcTotals(entriesByDay), [entriesByDay]);
 
@@ -200,6 +326,14 @@ export default function WeeklyGrid() {
         </div>
       )}
 
+      {loading && (
+        <div style={{ marginBottom: 12 }}>Loading entries…</div>
+      )}
+      {error && (
+        <div style={{ border: '1px solid var(--error)', color: 'var(--error)', padding: 10, borderRadius: 6, marginBottom: 12 }}>
+          {error}
+        </div>
+      )}
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
         {days.map((d) => {
           const label = formatDay(d);

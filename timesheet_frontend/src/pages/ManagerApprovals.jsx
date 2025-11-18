@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { useAuth } from '../lib/authContext';
-import { apiFetch } from '../lib/apiClient';
+import { getSupabase } from '../lib/supabaseClient';
 
 // PUBLIC_INTERFACE
 export default function ManagerApprovals() {
@@ -10,30 +10,64 @@ export default function ManagerApprovals() {
    * Displays pending submissions from team with placeholder actions.
    */
   const { user } = useAuth();
+  const supabase = getSupabase();
   const [loading, setLoading] = useState(false);
   const [pending, setPending] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
+    let active = true;
     async function load() {
       setLoading(true);
-      // Placeholder: replace with apiFetch('/manager/approvals')
-      await new Promise((r) => setTimeout(r, 250));
-      setPending([
-        { id: 'subm_1', employee: 'alice@example.com', week: dayjs().subtract(1, 'week').format('YYYY-[W]ww'), total: 38.5 },
-        { id: 'subm_2', employee: 'bob@example.com', week: dayjs().subtract(1, 'week').format('YYYY-[W]ww'), total: 42.0 },
-      ]);
-      setLoading(false);
+      setError('');
+      try {
+        if (!supabase) {
+          // No backend available
+          setPending([]);
+        } else {
+          // Expect a view or RPC for manager queue: manager_pending_approvals(auth_id)
+          const { data, error } = await supabase.rpc('manager_pending_approvals', {
+            p_manager_auth_id: user?.id || null,
+          });
+          if (error) throw error;
+          // Normalize expected fields: id, employee_email, week_key, total_hours
+          const mapped = (data || []).map((r) => ({
+            id: r.id,
+            employee: r.employee_email || r.user_email || 'unknown',
+            week: r.week_key || 'unknown',
+            total: Number(r.total_hours || 0),
+          }));
+          if (active) setPending(mapped);
+        }
+      } catch (e) {
+        if (active) setError(String(e?.message || e));
+      } finally {
+        if (active) setLoading(false);
+      }
     }
     load();
-  }, []);
+    return () => { active = false; };
+  }, [supabase, user?.id]);
 
-  const onApprove = (id) => {
-    // Placeholder action
-    setPending((list) => list.filter((x) => x.id !== id));
+  const onApprove = async (id) => {
+    try {
+      if (!supabase) return;
+      const { error } = await supabase.rpc('approve_submission', { p_submission_id: id });
+      if (error) throw error;
+      setPending((list) => list.filter((x) => x.id !== id));
+    } catch (e) {
+      setError(String(e?.message || e));
+    }
   };
-  const onRequestChanges = (id) => {
-    // Placeholder action
-    setPending((list) => list.filter((x) => x.id !== id));
+  const onRequestChanges = async (id) => {
+    try {
+      if (!supabase) return;
+      const { error } = await supabase.rpc('reject_submission', { p_submission_id: id });
+      if (error) throw error;
+      setPending((list) => list.filter((x) => x.id !== id));
+    } catch (e) {
+      setError(String(e?.message || e));
+    }
   };
 
   return (
@@ -48,6 +82,8 @@ export default function ManagerApprovals() {
       <section className="container">
         {loading ? (
           <div>Loading…</div>
+        ) : error ? (
+          <div style={{ color: 'var(--error)' }}>{error}</div>
         ) : pending.length === 0 ? (
           <div style={{ color: 'var(--text-secondary)' }}>No pending submissions.</div>
         ) : (

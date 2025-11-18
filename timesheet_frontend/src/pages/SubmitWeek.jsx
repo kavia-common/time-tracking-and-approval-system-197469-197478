@@ -24,12 +24,15 @@ export default function SubmitWeek() {
   const [state, setState] = useState('draft');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
   async function refresh() {
     setLoading(true);
     const res = await getWeekStatusApi({ userId, weekKey });
     if (res.ok) {
       setState(res.data?.state || 'draft');
+    } else {
+      setError(res.error || 'Failed to load status');
     }
     setLoading(false);
   }
@@ -52,8 +55,9 @@ export default function SubmitWeek() {
     if (res.ok) {
       setState('submitted');
       setMessage('Submitted successfully.');
+      setError('');
     } else {
-      setMessage('Submit failed.');
+      setError(res.error || 'Submit failed.');
     }
     setLoading(false);
   };
@@ -65,8 +69,9 @@ export default function SubmitWeek() {
     if (res.ok) {
       setState('draft');
       setMessage('Moved back to draft.');
+      setError('');
     } else {
-      setMessage('Recall failed.');
+      setError(res.error || 'Recall failed.');
     }
     setLoading(false);
   };
@@ -111,6 +116,9 @@ export default function SubmitWeek() {
 
       {message && (
         <div style={{ marginBottom: 12, color: 'var(--success)' }}>{message}</div>
+      )}
+      {error && (
+        <div style={{ marginBottom: 12, color: 'var(--error)' }}>{error}</div>
       )}
 
       <div style={{ display: 'flex', gap: 8 }}>

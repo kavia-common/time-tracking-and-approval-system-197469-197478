@@ -12,7 +12,7 @@ export default function ProtectedRoute({ children, requiredRole = null }) {
   const location = useLocation();
 
   if (loading) {
-    return <div style={{ padding: 16 }}>Loading...</div>;
+    return <div style={{ padding: 16 }}>Loading…</div>;
   }
 
   if (!user) {

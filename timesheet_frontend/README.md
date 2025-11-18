@@ -33,11 +33,24 @@ Copy `.env.example` to `.env` and fill in values (do not commit secrets):
 - REACT_APP_HEALTHCHECK_PATH=/health
 - REACT_APP_FEATURE_FLAGS=experimentalView
 - REACT_APP_EXPERIMENTS_ENABLED=false
-- REACT_APP_SUPABASE_URL=
-- REACT_APP_SUPABASE_ANON_KEY=
+- REACT_APP_SUPABASE_URL= https://fdqcbwzkvltlloqzdmhx.supabase.co
+- REACT_APP_SUPABASE_ANON_KEY= <your anon key here>
 
 Notes:
 - If REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY are not set, the app still renders; Login shows a notice and auth actions are disabled.
+- Supabase RPCs referenced by UI:
+  - submit_week(p_user_id uuid, p_week_key text, p_payload jsonb)
+  - recall_submission(p_user_id uuid, p_week_key text)
+  - manager_pending_approvals(p_manager_auth_id uuid)
+  - approve_submission(p_submission_id uuid)
+  - reject_submission(p_submission_id uuid)
+  - report_export_week(p_week_key text)
+  - report_export_month(p_month text)
+- Tables/views expected:
+  - timesheet_entries(user_id uuid, week_key text, date date, project_id text, task_id text, hours numeric, notes text)
+  - absences(user_id uuid, week_key text, date date, type text)
+  - timesheet_submissions(user_id uuid, week_key text, state text)
+  - user_roles(auth_id uuid, role text)
 - Feature flags: set REACT_APP_FEATURE_FLAGS as comma-separated keys; enable experimental routes with REACT_APP_EXPERIMENTS_ENABLED=true.
 - Supabase Auth: This app reads REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY at runtime. When present, email/password sign-in is enabled. When absent, the Login page shows a non-blocking notice.
 
