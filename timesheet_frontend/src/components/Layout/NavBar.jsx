@@ -15,6 +15,8 @@ export default function NavBar({ onToggleTheme, theme }) {
     navigate('/login');
   };
 
+  const roleLabel = role || ''; // hide while resolving; SideNav/ProtectedRoute apply defaults
+
   return (
     <header className="navbar">
       <div className="navbar-left">
@@ -29,7 +31,7 @@ export default function NavBar({ onToggleTheme, theme }) {
         {user ? (
           <>
             <span style={{ alignSelf: 'center', color: 'var(--text-secondary)', fontSize: 14 }}>
-              {user.email}{role ? ` · ${role}` : ''}
+              {user.email}{roleLabel ? ` · ${roleLabel}` : ''}
             </span>
             {error && (
               <span style={{ alignSelf: 'center', color: 'var(--error)', fontSize: 12 }}>

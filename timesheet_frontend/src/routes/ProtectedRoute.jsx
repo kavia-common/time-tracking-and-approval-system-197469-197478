@@ -7,10 +7,12 @@ export default function ProtectedRoute({ children, requiredRole = null }) {
   /**
    * Guards routes by checking authentication and optional required role.
    * Redirects unauthenticated users to /login with state.from for post-login navigation.
+   * Graceful role fallback: if role not yet resolved, show a lightweight loading state.
    */
   const { user, role, loading } = useAuth();
   const location = useLocation();
 
+  // While session/role is resolving, render a minimal loader to prevent flicker.
   if (loading) {
     return <div style={{ padding: 16 }}>Loading…</div>;
   }
@@ -19,8 +21,10 @@ export default function ProtectedRoute({ children, requiredRole = null }) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  if (requiredRole && role !== requiredRole) {
-    // For now, just redirect to dashboard; later show 403 or request elevation
+  // If a role is required, ensure role is present; default missing role to 'employee'
+  const effectiveRole = role || 'employee';
+  if (requiredRole && effectiveRole !== requiredRole) {
+    // Optionally, we could render 403; for MVP redirect to dashboard.
     return <Navigate to="/dashboard" replace />;
   }
 

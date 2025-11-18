@@ -19,6 +19,8 @@ export default function SideNav({ flags }) {
   const { user, role } = useAuth();
   if (!user) return null;
 
+  const effectiveRole = role || 'employee';
+
   return (
     <nav className="sidenav" aria-label="Primary">
       <NavLink to="/dashboard">Dashboard</NavLink>
@@ -26,10 +28,10 @@ export default function SideNav({ flags }) {
       <NavLink to="/timesheet/submit">Submit Week</NavLink>
       <NavLink to="/clock">Clock</NavLink>
 
-      {hasAnyRole(role, ['manager']) && <NavLink to="/approvals">Approvals</NavLink>}
-      {hasAnyRole(role, ['hr', 'admin']) && <NavLink to="/reporting/exports">Reporting / Exports</NavLink>}
+      {hasAnyRole(effectiveRole, ['manager']) && <NavLink to="/approvals">Approvals</NavLink>}
+      {hasAnyRole(effectiveRole, ['hr', 'admin']) && <NavLink to="/reporting/exports">Reporting / Exports</NavLink>}
 
-      {hasAnyRole(role, ['admin']) && (
+      {hasAnyRole(effectiveRole, ['admin']) && (
         <>
           <div style={{ marginTop: 10, marginBottom: 4, fontSize: 12, color: 'var(--text-secondary)' }}>
             Admin

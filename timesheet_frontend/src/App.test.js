@@ -11,6 +11,7 @@ function renderWithAuth(ui, { user = null, role = null, loading = false, initial
     loading,
     signIn: jest.fn(),
     signOut: jest.fn(),
+    refreshRole: jest.fn(),
   };
   return render(
     <MemoryRouter initialEntries={initialEntries}>
@@ -49,5 +50,12 @@ describe('App routing shell', () => {
     renderWithAuth(<App />, { user: null, initialEntries: ['/dashboard'] });
     // When unauthenticated trying to access protected route, Login should be visible
     expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument();
+  });
+
+  test('Manager-only route is gated when role missing (defaults to employee)', () => {
+    // Authenticated but role unresolved => should be treated as employee and redirected away from /approvals
+    renderWithAuth(<App />, { user: { id: 'u1', email: 'a@example.com' }, role: null, initialEntries: ['/approvals'] });
+    // Should end up on dashboard content (header exists)
+    expect(screen.getByRole('heading', { name: /my dashboard/i })).toBeInTheDocument();
   });
 });
