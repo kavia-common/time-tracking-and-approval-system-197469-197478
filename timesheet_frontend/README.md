@@ -18,7 +18,7 @@ Install and run:
 
 ## Environment Variables
 
-Create a `.env` file in this folder (do not commit secrets). Example `.env.example`:
+Copy `.env.example` to `.env` and fill in values (do not commit secrets):
 
 - REACT_APP_API_BASE=
 - REACT_APP_BACKEND_URL=
@@ -39,6 +39,7 @@ Create a `.env` file in this folder (do not commit secrets). Example `.env.examp
 Notes:
 - If REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY are not set, the app still renders; Login shows a notice and auth actions are disabled.
 - Feature flags: set REACT_APP_FEATURE_FLAGS as comma-separated keys; enable experimental routes with REACT_APP_EXPERIMENTS_ENABLED=true.
+- Supabase Auth: This app reads REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY at runtime. When present, email/password sign-in is enabled. When absent, the Login page shows a non-blocking notice.
 
 ## App Structure and Routes
 

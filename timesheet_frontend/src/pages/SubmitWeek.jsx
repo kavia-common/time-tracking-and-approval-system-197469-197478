@@ -1,27 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../lib/authContext';
-import { apiFetch } from '../lib/apiClient';
 import { getWeekStart, loadDraft, toISODate, getWeekDays } from '../utils/time';
 import dayjs from 'dayjs';
+import { submitWeekApi, getWeekStatusApi, recallSubmissionApi } from '../lib/apiHooks';
 
 // simple state machine states
 const STATES = ['draft', 'submitted', 'approved', 'needs_changes'];
-
-// Stub API calls
-async function apiSubmitWeek({ userId, weekKey, payload }) {
-  // Stub: In future, POST /timesheets/submit
-  // Here we simulate success
-  return { ok: true, status: 200, data: { state: 'submitted', weekKey } };
-}
-async function apiGetWeekStatus({ userId, weekKey }) {
-  // Stub: In future, GET /timesheets/status
-  // Simulate 'draft' if nothing else persisted
-  return { ok: true, status: 200, data: { state: 'draft' } };
-}
-async function apiRecallSubmission({ userId, weekKey }) {
-  // Stub: recall to draft
-  return { ok: true, status: 200, data: { state: 'draft' } };
-}
 
 // PUBLIC_INTERFACE
 export default function SubmitWeek() {
@@ -43,7 +27,7 @@ export default function SubmitWeek() {
 
   async function refresh() {
     setLoading(true);
-    const res = await apiGetWeekStatus({ userId, weekKey });
+    const res = await getWeekStatusApi({ userId, weekKey });
     if (res.ok) {
       setState(res.data?.state || 'draft');
     }
@@ -64,7 +48,7 @@ export default function SubmitWeek() {
   const submit = async () => {
     setLoading(true);
     setMessage('');
-    const res = await apiSubmitWeek({ userId, weekKey, payload: draft });
+    const res = await submitWeekApi({ userId, weekKey, payload: draft });
     if (res.ok) {
       setState('submitted');
       setMessage('Submitted successfully.');
@@ -77,7 +61,7 @@ export default function SubmitWeek() {
   const recall = async () => {
     setLoading(true);
     setMessage('');
-    const res = await apiRecallSubmission({ userId, weekKey });
+    const res = await recallSubmissionApi({ userId, weekKey });
     if (res.ok) {
       setState('draft');
       setMessage('Moved back to draft.');
