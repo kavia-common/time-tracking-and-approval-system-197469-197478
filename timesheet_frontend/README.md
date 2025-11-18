@@ -1,82 +1,85 @@
-# Lightweight React Template for KAVIA
+# Chronose Frontend (React)
 
-This project provides a minimal React template with a clean, modern UI and minimal dependencies.
+Minimal React app with Ocean Professional theme and structured routes for the Chronose MVP.
 
 ## Features
 
-- **Lightweight**: No heavy UI frameworks - uses only vanilla CSS and React
-- **Modern UI**: Clean, responsive design with KAVIA brand styling
-- **Fast**: Minimal dependencies for quick loading times
-- **Simple**: Easy to understand and modify
+- Lightweight, idiomatic React (no heavy UI framework)
+- Routing with protected routes and role-gated navigation
+- Weekly timesheet grid with autosave and CSV export
+- Auth context integrated with Supabase (graceful when env not set)
 
 ## Getting Started
 
-In the project directory, you can run:
+Install and run:
 
-### `npm start`
+- npm install
+- npm start (http://localhost:3000)
 
-Runs the app in development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Environment Variables
 
-### `npm test`
+Create a `.env` file in this folder (do not commit secrets). Example `.env.example`:
 
-Launches the test runner in interactive watch mode.
+- REACT_APP_API_BASE=
+- REACT_APP_BACKEND_URL=
+- REACT_APP_FRONTEND_URL=
+- REACT_APP_WS_URL=
+- REACT_APP_NODE_ENV=development
+- REACT_APP_NEXT_TELEMETRY_DISABLED=true
+- REACT_APP_ENABLE_SOURCE_MAPS=true
+- REACT_APP_PORT=3000
+- REACT_APP_TRUST_PROXY=false
+- REACT_APP_LOG_LEVEL=info
+- REACT_APP_HEALTHCHECK_PATH=/health
+- REACT_APP_FEATURE_FLAGS=experimentalView
+- REACT_APP_EXPERIMENTS_ENABLED=false
+- REACT_APP_SUPABASE_URL=
+- REACT_APP_SUPABASE_ANON_KEY=
 
-### `npm run build`
+Notes:
+- If REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY are not set, the app still renders; Login shows a notice and auth actions are disabled.
+- Feature flags: set REACT_APP_FEATURE_FLAGS as comma-separated keys; enable experimental routes with REACT_APP_EXPERIMENTS_ENABLED=true.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## App Structure and Routes
 
-## Customization
+- Global shell:
+  - NavBar: shows app title (Chronose), theme toggle, and auth controls
+  - SideNav: visible only when authenticated; includes primary links and admin-only section
+- Routes:
+  - / → redirects to /dashboard (if authenticated) or /login
+  - /login → Login page (Supabase email/password)
+  - /dashboard → EmployeeDashboard (protected)
+  - /timesheet → WeeklyGrid (protected)
+  - /timesheet/submit → SubmitWeek (protected)
+  - /clock → Clock (protected)
+  - /approvals → ManagerApprovals (protected, requiredRole="manager")
+  - /reporting/exports → Exports (protected, requiredRole="hr")
+  - /admin/users-roles → UsersRoles (protected, requiredRole="admin")
+  - /admin/projects-tasks → ProjectsTasks (protected, requiredRole="admin")
+  - /admin/holidays-absences → HolidaysAbsences (protected, requiredRole="admin")
+  - /admin/settings → Settings (protected, requiredRole="admin")
+  - /admin/audit-logs → AuditLogs (protected, requiredRole="admin")
+  - /experimental → Example experimental page (requires REACT_APP_EXPERIMENTS_ENABLED and feature flag)
 
-### Colors
+## Testing
 
-The main brand colors are defined as CSS variables in `src/App.css`:
+We use React Testing Library via CRA.
 
-```css
-:root {
-  --kavia-orange: #E87A41;
-  --kavia-dark: #1A1A1A;
-  --text-color: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --border-color: rgba(255, 255, 255, 0.1);
-}
-```
+- npm test (watch mode)
+- CI: run tests once with CI=true npm test
 
-### Components
+Included tests:
+- src/App.test.js — shell elements (NavBar), SideNav visibility, login route rendering, protected route unauthenticated redirect.
+- src/pages/WeeklyGrid.test.jsx — renders basics, can add entry rows, totals update.
 
-This template uses pure HTML/CSS components instead of a UI framework. You can find component styles in `src/App.css`. 
+Ensure setupTests.js includes @testing-library/jest-dom (already configured).
 
-Common components include:
-- Buttons (`.btn`, `.btn-large`)
-- Container (`.container`)
-- Navigation (`.navbar`)
-- Typography (`.title`, `.subtitle`, `.description`)
+## Build
 
-## Learn More
+- npm run build — outputs production bundle in build/
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Styling
 
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Theme variables in src/App.css (Ocean Professional)
+- Layout components in src/components/Layout/
+- Follow accessible labels for inputs and navigation for reliable tests and a11y
