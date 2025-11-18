@@ -6,6 +6,7 @@ import { featureFlags } from './lib/featureFlags';
 import NavBar from './components/Layout/NavBar';
 import SideNav from './components/Layout/SideNav';
 import Container from './components/Layout/Container';
+import SupabaseEnvBanner from './components/Diagnostics/SupabaseEnvBanner';
 import ProtectedRoute from './routes/ProtectedRoute';
 import Login from './pages/Login';
 import WeeklyGrid from './pages/WeeklyGrid';
@@ -40,6 +41,7 @@ function App() {
   return (
     <div className="App" data-theme={theme}>
       <NavBar onToggleTheme={toggleTheme} theme={theme} />
+      <SupabaseEnvBanner />
       <div className="app-shell">
         {user ? <SideNav flags={flags} /> : null}
         <main className="app-content">

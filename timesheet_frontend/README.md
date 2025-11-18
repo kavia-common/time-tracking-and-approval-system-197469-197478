@@ -53,6 +53,10 @@ Notes:
   - user_roles(auth_id uuid, role text)
 - Feature flags: set REACT_APP_FEATURE_FLAGS as comma-separated keys; enable experimental routes with REACT_APP_EXPERIMENTS_ENABLED=true.
 - Supabase Auth: This app reads REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY at runtime. When present, email/password sign-in is enabled. When absent, the Login page shows a non-blocking notice.
+- Diagnostics Banner: A small, dismissible diagnostics banner appears in non-production to show masked status of Supabase env vars.
+  - Toggle on in production with REACT_APP_FEATURE_FLAGS=showSupabaseBanner
+  - Dismiss persists via localStorage ('hideSupabaseBanner')
+  - Values are masked; full secrets are never logged or displayed.
 
 ## App Structure and Routes
 
