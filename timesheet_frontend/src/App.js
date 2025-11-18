@@ -8,6 +8,9 @@ import SideNav from './components/Layout/SideNav';
 import Container from './components/Layout/Container';
 import ProtectedRoute from './routes/ProtectedRoute';
 import Login from './pages/Login';
+import WeeklyGrid from './pages/WeeklyGrid';
+import SubmitWeek from './pages/SubmitWeek';
+import Clock from './pages/Clock';
 
 // Simple placeholder components for route targets
 const Placeholder = ({ title }) => (
@@ -61,7 +64,23 @@ function App() {
                 path="/timesheet"
                 element={
                   <ProtectedRoute>
-                    <Placeholder title="Timesheet" />
+                    <WeeklyGrid />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/timesheet/submit"
+                element={
+                  <ProtectedRoute>
+                    <SubmitWeek />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/clock"
+                element={
+                  <ProtectedRoute>
+                    <Clock />
                   </ProtectedRoute>
                 }
               />
